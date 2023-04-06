@@ -6,18 +6,19 @@ import { isPlainObject } from "./isPlainObject";
 function App() {
   const addOne = useCallback(() => {
     (async () => {
+      // get selection
       const selection = await OBR.player.getSelection();
       if (!selection) return;
 
+      // get selected items
       const items = await OBR.scene.items.getItems<Image>(selection);
-
       if (!items) return;
 
+      // get counters for all items
       const tokenCounters = await OBR.scene.items.getItems<Text>((item) => {
         const metadata = item.metadata[getPluginId("metadata")];
         return Boolean(isPlainObject(metadata) && metadata.enabled);
       });
-
       if (!tokenCounters) return;
 
       const dpi = await OBR.scene.grid.getDpi();
@@ -32,9 +33,11 @@ function App() {
           const dpiScale = dpi / item.grid.dpi;
           const width = item.image.width * dpiScale;
           const height = item.image.height * dpiScale;
-          const offsetX = (item.grid.offset.x / item.image.width) * width;
-          const offsetY = (item.grid.offset.y / item.image.height) * height;
-          // Apply image offset and offset circle position so the origin is the top left
+          const offsetX =
+            (item.grid.offset.x / item.image.width) * item.scale.x * width;
+          const offsetY =
+            (item.grid.offset.y / item.image.height) * item.scale.y * height;
+          // Apply offset so the text origin is the top left
           const position = {
             x: item.position.x - offsetX,
             y: item.position.y - offsetY,
@@ -48,7 +51,7 @@ function App() {
             .position(position)
             .fillColor("red")
             .strokeColor("white")
-            .strokeWidth(2)
+            .strokeWidth(1)
             .strokeOpacity(1)
             .attachedTo(item.id)
             .locked(true)
@@ -60,9 +63,9 @@ function App() {
 
           OBR.scene.items.addItems([txt]);
         } else {
-          OBR.scene.items.updateItems([attachedCounter], (items) => {
+          OBR.scene.items.updateItems([attachedCounter], (counterItems) => {
             const number = parseInt(attachedCounter.text.plainText);
-            items[0].text.plainText = `${number + 1}`;
+            counterItems[0].text.plainText = `${number + 1}`;
           });
         }
       }
@@ -72,18 +75,15 @@ function App() {
   const subtractOne = useCallback(() => {
     (async () => {
       const selection = await OBR.player.getSelection();
-
       if (!selection) return;
 
       const items = await OBR.scene.items.getItems<Image>(selection);
-
       if (!items) return;
 
       const tokenCounters = await OBR.scene.items.getItems<Text>((item) => {
         const metadata = item.metadata[getPluginId("metadata")];
         return Boolean(isPlainObject(metadata) && metadata.enabled);
       });
-
       if (!tokenCounters) return;
 
       for (const item of items) {
@@ -96,6 +96,7 @@ function App() {
           return;
         } else {
           const number = parseInt(attachedCounter.text.plainText);
+
           if (number == 1) {
             OBR.scene.items.deleteItems([attachedCounter.id]);
           } else {
