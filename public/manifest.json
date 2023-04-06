@@ -1,0 +1,9 @@
+{
+  "name": "Token Counter",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Max paulus",
+  "icon": "/icon.svg",
+  "background_url": "/background.html",
+  "description": "Add simple counter to any character"
+}
