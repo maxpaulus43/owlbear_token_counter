@@ -5,8 +5,8 @@ author: Max Paulus
 image: https://raw.githubusercontent.com/maxpaulus43/owlbear_token_counter/main/hero.jpg
 icon: https://raw.githubusercontent.com/maxpaulus43/owlbear_token_counter/main/public/icon.svg
 tags:
-  - Tool
-  - Combat
+  - tool
+  - combat
 manifest: https://owlbear-token-counter.onrender.com/manifest.json
 learn-more: https://github.com/maxpaulus43/owlbear_token_counter
 ---
