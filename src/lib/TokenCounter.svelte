@@ -213,12 +213,36 @@
   >
     +
   </button>
-  <button class="bg-red-500 swatch" on:click={() => setColor("red")} />
-  <button class="bg-orange-500 swatch" on:click={() => setColor("orange")} />
-  <button class="bg-yellow-500 swatch" on:click={() => setColor("yellow")} />
-  <button class="bg-green-500 swatch" on:click={() => setColor("green")} />
-  <button class="bg-blue-500 swatch" on:click={() => setColor("blue")} />
-  <button class="bg-purple-500 swatch" on:click={() => setColor("purple")} />
+  <button
+    class="bg-red-500 swatch"
+    on:click={() => setColor("red")}
+    aria-label="red"
+  />
+  <button
+    class="bg-orange-500 swatch"
+    on:click={() => setColor("orange")}
+    aria-label="orange"
+  />
+  <button
+    class="bg-yellow-500 swatch"
+    on:click={() => setColor("yellow")}
+    aria-label="yellow"
+  />
+  <button
+    class="bg-green-500 swatch"
+    on:click={() => setColor("green")}
+    aria-label="green"
+  />
+  <button
+    class="bg-blue-500 swatch"
+    on:click={() => setColor("blue")}
+    aria-label="blue"
+  />
+  <button
+    class="bg-purple-500 swatch"
+    on:click={() => setColor("purple")}
+    aria-label="purple"
+  />
 </div>
 
 <style lang="postcss">
