@@ -1,5 +1,5 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { getPluginId } from "./getPluginId";
+import { getPluginId } from "./lib/getPluginId";
 
 import icon from "./status.svg";
 
@@ -29,7 +29,7 @@ OBR.onReady(() => {
         id: getPluginId("color-picker"),
         url: "/",
         height: 80,
-        width: 100,
+        width: 150,
         anchorElementId: elementId,
       });
     },
