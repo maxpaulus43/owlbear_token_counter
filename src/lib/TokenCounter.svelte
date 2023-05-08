@@ -9,8 +9,11 @@
 
   let numberInputValue: number = 0;
   let isVisible = true;
+  let hasToggleVisibilityPermission = false;
 
   onMount(async () => {
+    const role = await OBR.player.getRole();
+    hasToggleVisibilityPermission = role === "GM";
     const itemsAndCounters = await getSelectedItemsAndCounters();
     let visibleCount = 0;
     let itemCount = 0;
@@ -149,7 +152,7 @@
     const itemsAndCounters = await getSelectedItemsAndCounters();
     let atLeastOneItemChanged = false;
     for (const { item, counter } of itemsAndCounters) {
-      if (!item.visible) continue;
+      if (!item.visible || !counter) continue;
       atLeastOneItemChanged = true;
       OBR.scene.items.updateItems([counter], (items) => {
         items[0].visible = !isVisible;
@@ -175,6 +178,7 @@
         }
       } else {
         if (isBad(inputValue) || inputValue === 0) {
+          numberInputValue = 0;
           OBR.scene.items.deleteItems([counter.id]);
         } else {
           numberInputValue = inputValue;
@@ -205,6 +209,7 @@
     inputmode="numeric"
     min="0"
     class="col-span-3 text-black text-center"
+    class:col-span-4={!hasToggleVisibilityPermission}
     value={numberInputValue}
     on:input={onInput}
     on:focus={onFocus}
@@ -216,13 +221,15 @@
   >
     +
   </button>
-  <button on:click={toggleVisibility}>
-    {#if isVisible}
-      <Eye />
-    {:else}
-      <CrossEye />
-    {/if}
-  </button>
+  {#if hasToggleVisibilityPermission}
+    <button on:click={toggleVisibility}>
+      {#if isVisible}
+        <Eye />
+      {:else}
+        <CrossEye />
+      {/if}
+    </button>
+  {/if}
   <button
     class="bg-red-500 swatch"
     on:click={() => setColor("red")}
