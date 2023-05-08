@@ -4,29 +4,31 @@
   import { getPluginId } from "./getPluginId";
   import { isPlainObject } from "./isPlainObject";
   import { onMount } from "svelte";
+  import Eye from "../assets/eye.svelte";
+  import CrossEye from "../assets/cross-eye.svelte";
 
   let numberInputValue: number = 0;
+  let isVisible = true;
 
   onMount(async () => {
-    const [items, tokenCounters] = await getSelectedItemsAndTokens();
-
-    for (const item of items) {
-      // Find the counter attached to this item
-      const attachedCounter = tokenCounters.filter(
-        (tokenCounter) => tokenCounter.attachedTo === item.id
-      )[0];
-
-      if (!attachedCounter) {
-        continue;
-      } else {
-        const numberFromCounter = parseInt(attachedCounter.text.plainText);
-        numberInputValue = numberFromCounter;
-      }
+    const itemsAndCounters = await getSelectedItemsAndCounters();
+    let visibleCount = 0;
+    let itemCount = 0;
+    for (const { item, counter } of itemsAndCounters) {
+      if (!counter) continue;
+      if (item.visible) itemCount++;
+      const numberFromCounter = parseInt(counter.text.plainText);
+      numberInputValue = numberFromCounter;
+      if (counter.visible) visibleCount++;
     }
+    isVisible = visibleCount > itemCount / 2;
   });
 
-  async function getSelectedItemsAndTokens(): Promise<[Image[], Text[]]> {
-    let result: [Image[], Text[]] = [[], []];
+  async function getSelectedItemsAndCounters(): Promise<
+    { item: Image; counter: Text }[]
+  > {
+    let result: { item: Image; counter: Text }[] = [];
+
     // get selection
     const selection = await OBR.player.getSelection();
     if (!selection) return result;
@@ -40,8 +42,13 @@
       const metadata = item.metadata[getPluginId("metadata")];
       return Boolean(isPlainObject(metadata) && metadata.enabled);
     });
-    if (!tokenCounters) return result;
-    return [items, tokenCounters];
+
+    return items.map((item) => {
+      return {
+        item,
+        counter: tokenCounters.find((c) => c.attachedTo === item.id),
+      };
+    });
   }
 
   async function attachCounterToItemWithNumber(item: Image, number: number) {
@@ -82,20 +89,16 @@
   }
 
   async function addOne() {
-    const [items, tokenCounters] = await getSelectedItemsAndTokens();
+    const itemsAndCounters = await getSelectedItemsAndCounters();
     numberInputValue += 1;
 
-    for (const item of items) {
+    for (const { item, counter } of itemsAndCounters) {
       // Find the counter attached to this item
-      const attachedCounter = tokenCounters.filter(
-        (tokenCounter) => tokenCounter.attachedTo === item.id
-      )[0];
-
-      if (!attachedCounter) {
+      if (!counter) {
         attachCounterToItemWithNumber(item, 1);
       } else {
-        OBR.scene.items.updateItems([attachedCounter], (counterItems) => {
-          const number = parseInt(attachedCounter.text.plainText);
+        OBR.scene.items.updateItems([counter], (counterItems) => {
+          const number = parseInt(counter.text.plainText);
           counterItems[0].text.plainText = `${number + 1}`;
         });
       }
@@ -103,26 +106,21 @@
   }
 
   async function subtractOne() {
-    const [items, tokenCounters] = await getSelectedItemsAndTokens();
+    const itemsAndCounters = await getSelectedItemsAndCounters();
     numberInputValue -= 1;
 
-    for (const item of items) {
-      // Find the counter attached to this item
-      const attachedCounter = tokenCounters.filter(
-        (tokenCounter) => tokenCounter.attachedTo === item.id
-      )[0];
-
-      if (!attachedCounter) {
+    for (const { counter } of itemsAndCounters) {
+      if (!counter) {
         continue;
       } else {
-        const number = parseInt(attachedCounter.text.plainText);
+        const number = parseInt(counter.text.plainText);
 
         if (number == 1) {
           console.log("deleting");
-          OBR.scene.items.deleteItems([attachedCounter.id]);
+          OBR.scene.items.deleteItems([counter.id]);
         } else {
-          OBR.scene.items.updateItems([attachedCounter], (items) => {
-            const number = parseInt(attachedCounter.text.plainText);
+          OBR.scene.items.updateItems([counter], (items) => {
+            const number = parseInt(counter.text.plainText);
             items[0].text.plainText = `${number - 1}`;
           });
         }
@@ -133,23 +131,32 @@
   type Color = "red" | "orange" | "yellow" | "green" | "blue" | "purple";
 
   async function setColor(color: Color) {
-    const [items, tokenCounters] = await getSelectedItemsAndTokens();
-
-    for (const item of items) {
-      // Find the counter attached to this item
-      const attachedCounter = tokenCounters.filter(
-        (tokenCounter) => tokenCounter.attachedTo === item.id
-      )[0];
-
-      if (!attachedCounter) {
+    const itemsAndCounters = await getSelectedItemsAndCounters();
+    for (const { counter } of itemsAndCounters) {
+      if (!counter) {
         continue;
       } else {
-        OBR.scene.items.updateItems([attachedCounter], (items) => {
+        OBR.scene.items.updateItems([counter], (items) => {
           items[0].text.style.fillColor = color;
           items[0].text.style.strokeColor =
             color === "yellow" ? "black" : "white";
         });
       }
+    }
+  }
+
+  async function toggleVisibility() {
+    const itemsAndCounters = await getSelectedItemsAndCounters();
+    let atLeastOneItemChanged = false;
+    for (const { item, counter } of itemsAndCounters) {
+      if (!item.visible) continue;
+      atLeastOneItemChanged = true;
+      OBR.scene.items.updateItems([counter], (items) => {
+        items[0].visible = !isVisible;
+      });
+    }
+    if (atLeastOneItemChanged) {
+      isVisible = !isVisible;
     }
   }
 
@@ -160,24 +167,18 @@
   async function onInput(e: Event) {
     const inputValue = parseInt((e.target as HTMLInputElement).value);
 
-    const [items, tokenCounters] = await getSelectedItemsAndTokens();
-
-    for (const item of items) {
-      // Find the counter attached to this item
-      const attachedCounter = tokenCounters.filter(
-        (tokenCounter) => tokenCounter.attachedTo === item.id
-      )[0];
-
-      if (!attachedCounter) {
+    const itemsAndCounters = await getSelectedItemsAndCounters();
+    for (const { item, counter } of itemsAndCounters) {
+      if (!counter) {
         if (!isBad(inputValue) && inputValue !== 0) {
           attachCounterToItemWithNumber(item, inputValue);
         }
       } else {
         if (isBad(inputValue) || inputValue === 0) {
-          OBR.scene.items.deleteItems([attachedCounter.id]);
+          OBR.scene.items.deleteItems([counter.id]);
         } else {
           numberInputValue = inputValue;
-          OBR.scene.items.updateItems([attachedCounter], (items) => {
+          OBR.scene.items.updateItems([counter], (items) => {
             items[0].text.plainText = `${inputValue}`;
           });
         }
@@ -190,7 +191,9 @@
   }
 </script>
 
-<div class="grid grid-cols-6 grid-rows-2 text-white h-[80px] gap-1 text-2xl">
+<div
+  class="grid grid-cols-6 grid-rows-2 text-white h-[80px] gap-1 text-2xl p-1"
+>
   <button
     class="bg-teal-500 rounded-sm active:bg-teal-700"
     on:click={() => subtractOne()}
@@ -201,7 +204,7 @@
     type="number"
     inputmode="numeric"
     min="0"
-    class="col-span-4 text-black text-center"
+    class="col-span-3 text-black text-center"
     value={numberInputValue}
     on:input={onInput}
     on:focus={onFocus}
@@ -212,6 +215,13 @@
     on:click={() => addOne()}
   >
     +
+  </button>
+  <button on:click={toggleVisibility}>
+    {#if isVisible}
+      <Eye />
+    {:else}
+      <CrossEye />
+    {/if}
   </button>
   <button
     class="bg-red-500 swatch"
