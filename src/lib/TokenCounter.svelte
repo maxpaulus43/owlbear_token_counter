@@ -17,6 +17,7 @@
     const itemsAndCounters = await getSelectedItemsAndCounters();
     let visibleCount = 0;
     let itemCount = 0;
+    // when first appear, calculate whether visibility button should show "visible" or "hidden"
     for (const { item, counter } of itemsAndCounters) {
       if (!counter) continue;
       if (item.visible) itemCount++;
@@ -91,44 +92,31 @@
     OBR.scene.items.addItems([txt]);
   }
 
-  async function addOne() {
+  async function updateCountersWithNumber(n: number) {
     const itemsAndCounters = await getSelectedItemsAndCounters();
-    numberInputValue += 1;
 
     for (const { item, counter } of itemsAndCounters) {
       // Find the counter attached to this item
-      if (!counter) {
-        attachCounterToItemWithNumber(item, 1);
+      if (n == 0) {
+        OBR.scene.items.deleteItems([counter.id]);
+      } else if (!counter) {
+        attachCounterToItemWithNumber(item, n);
       } else {
         OBR.scene.items.updateItems([counter], (counterItems) => {
-          const number = parseInt(counter.text.plainText);
-          counterItems[0].text.plainText = `${number + 1}`;
+          counterItems[0].text.plainText = `${n}`;
         });
       }
     }
   }
 
+  async function addOne() {
+    numberInputValue += 1;
+    updateCountersWithNumber(numberInputValue);
+  }
+
   async function subtractOne() {
-    const itemsAndCounters = await getSelectedItemsAndCounters();
     numberInputValue -= 1;
-
-    for (const { counter } of itemsAndCounters) {
-      if (!counter) {
-        continue;
-      } else {
-        const number = parseInt(counter.text.plainText);
-
-        if (number == 1) {
-          console.log("deleting");
-          OBR.scene.items.deleteItems([counter.id]);
-        } else {
-          OBR.scene.items.updateItems([counter], (items) => {
-            const number = parseInt(counter.text.plainText);
-            items[0].text.plainText = `${number - 1}`;
-          });
-        }
-      }
-    }
+    updateCountersWithNumber(numberInputValue);
   }
 
   type Color = "red" | "orange" | "yellow" | "green" | "blue" | "purple";
